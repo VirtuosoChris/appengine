@@ -80,7 +80,7 @@ class CreateList(webapp2.RequestHandler):
     def post(self):
         self.response.headers['Content-Type'] = 'text/html'
 
-        list_name = self.request.get('list_name')
+        list_name = urllib.quote_plus(self.request.get('list_name'))
         
         if len(list_name) > MAX_LIST_NAME_LENGTH:
             list_name = list_name[0:MAX_LIST_NAME_LENGTH]
@@ -89,6 +89,7 @@ class CreateList(webapp2.RequestHandler):
     
         if listKey.get():
             self.response.write("ERROR : LIST ALREADY EXISTS")
+            #self.redirect('/list/' + list_name) ###
         else:
             list = ListMakerList()
             list.key = listKey
@@ -99,7 +100,7 @@ class CreateList(webapp2.RequestHandler):
             
             list.put()
             
-            self.redirect('/list/' + list_name)
+            self.redirect('/list/' + urllib.quote_plus(list_name))
 
 
 class ListPage(webapp2.RequestHandler):
