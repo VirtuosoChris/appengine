@@ -5,22 +5,22 @@
         <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
     </head>
     <body>
-        <div>{{ guestbook_unquoted }}</div>
+        <div>{{ list_unquoted }}</div>
         
-        {% for greeting in greetings %}
-        {% if greeting.author %}
-        <b>{{ greeting.author.email() }}
-            {% if user and user.user_id() == greeting.author.user_id() %}
+        {% for listitem in list %}
+        {% if listitem.author %}
+        <b>{{ listitem.author.email() }}
+            {% if user and user.user_id() == listitem.author.user_id() %}
             (You)
             {% endif %}
         </b> wrote:
         {% else %}
         An anonymous person wrote:
         {% endif %}
-        <blockquote>{{ greeting.content }}</blockquote>
+        <blockquote>{{ listitem.content }}</blockquote>
         {% endfor %}
         
-        <form action="/list/{{guestbook_name}}?write_list={{guestbook_name}}" method="post">
+        <form action="/list/{{list_name}}?write_list={{list_name}}" method="post">
             <div><textarea name="content" rows="3" cols="60" maxlength="500"></textarea></div>
             <div><input type="submit" value="Add item to list"></div>
         </form>

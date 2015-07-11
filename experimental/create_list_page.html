@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+    <head>
+        <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
+    </head>
+    <body>
+        <form action="/newlist" method="post">
+            <div><textarea name="list_name" rows="3" cols="60" maxlength="140"></textarea></div>
+            <div><input type="submit" value="Create List"></div>
+        </form>
+        <hr>
+        <a href="{{ url|safe }}">{{ url_linktext }}</a>
+        
+    </body>
+</html>
+{% endautoescape %}

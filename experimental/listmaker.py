@@ -1,11 +1,24 @@
-from google.appengine.api import users
-from google.appengine.ext import ndb
+#todo list
+#prevent spam
+#prevent duplicate submissions
+#nonexistent lists, create list page
+#karma buttons
+#complete homepage
+#complete user pages
+
+#parent list item to "lists"
+#parent content to particular list
+
 import webapp2
 import cgi
 import urllib
 import os
 import jinja2
 from urlparse import urlparse
+
+from google.appengine.api import users
+from google.appengine.ext import ndb
+
 
 JINJA_ENVIRONMENT = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
                                        extensions=['jinja2.ext.autoescape'],
@@ -14,18 +27,19 @@ JINJA_ENVIRONMENT = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.di
 DEFAULT_LIST_NAME = 'Reasons Why You Should Use ListMaker'
 DEFAULT_LIST_NAME_ESCAPED = urllib.quote_plus(DEFAULT_LIST_NAME)
 MAX_CONTENT_TEXT_LENGTH = 500
+MAX_LIST_NAME_LENGTH = 140
 
 # We set a parent key on the 'Greetings' to ensure that they are all
 # in the same entity group. Queries across the single entity group
 # will be consistent.  However, the write rate should be limited to
 # ~1/second.
 
-def guestbook_key(guestbook_name=DEFAULT_LIST_NAME):
-    """Constructs a Datastore key for a Guestbook entity.
-        
-        We use guestbook_name as the key.
-        """
-    return ndb.Key('Guestbook', guestbook_name)
+def list_key(list_name=DEFAULT_LIST_NAME):
+    return ndb.Key('ListMakerList', list_name)
+
+#def karma_delta(karma_delta, ndb_key):
+#url_string = sandy_key.urlsafe()
+#sandy_key.kind() == 'Account'
 
 class ListMakerUser(ndb.Model): #todo aliases, different login mechanisms
     identity = ndb.UserProperty(indexed=True)
@@ -37,6 +51,10 @@ class ListMakerContent(ndb.Model):
     upvotes = ndb.IntegerProperty(indexed=False, default=1);
     downvotes = ndb.IntegerProperty(indexed=False, default=0);
     date = ndb.DateTimeProperty(auto_now_add=True)
+
+class ListMakerList(ListMakerContent):
+
+class ListMakerListItem(ListMakerContent):
 
 class MainPage(webapp2.RequestHandler): #separate main page from list page and user page
     def get(self):
@@ -51,8 +69,35 @@ class UserPage(webapp2.RequestHandler):
         self.response.write("Temp page, for user information, showing postings")
 
 
-class ListPage(webapp2.RequestHandler): #separate main page from list page and user page
+class CreateList(webapp2.RequestHandler):
+    def get(self):
+        self.response.headers['Content-Type'] = 'text/html'
+        template = JINJA_ENVIRONMENT.get_template('create_list_page.html')
+        self.response.write(template.render())
     
+    def post(self):
+        self.response.headers['Content-Type'] = 'text/html'
+
+        list_name = self.request.get('list_name')
+        
+        if len(list_name) > MAX_LIST_NAME_LENGTH:
+            list_name = list_name[0:MAX_LIST_NAME_LENGTH]
+        
+        listKey = list_key(list_name)
+    
+        if listKey.get():
+            self.response.write("ERROR : LIST ALREADY EXISTS")
+        else:
+            list = ListMakerList()
+            list.content = list_name
+        
+            if users.get_current_user():
+                list.author = users.get_current_user()
+            
+            self.redirect('/list/' + list_name)
+
+
+class ListPage(webapp2.RequestHandler):
     def post(self):
         list_name = self.request.get('write_list', DEFAULT_LIST_NAME_ESCAPED)
 
@@ -62,7 +107,7 @@ class ListPage(webapp2.RequestHandler): #separate main page from list page and u
             content = content[0:MAX_CONTENT_TEXT_LENGTH];
 
         if len(content):
-            listItem = ListMakerContent(parent=guestbook_key(list_name))
+            listItem = ListMakerContent(parent=list_key(list_name))
         
             if users.get_current_user():
                 listItem.author = users.get_current_user()
@@ -81,34 +126,43 @@ class ListPage(webapp2.RequestHandler): #separate main page from list page and u
 
         if list_name.startswith("/list/"):
             list_name = list_name[6:]
+                
+        listKey = list_key(list_name)
     
-        list_query = ListMakerContent.query(ancestor=guestbook_key(list_name)).order(-ListMakerContent.date)
+        if listKey.get():
+    
+            list_query = ListMakerContent.query(ancestor=listKey).order(-ListMakerContent.date)
         
-        list_items = list_query.fetch(10)
+            list_items = list_query.fetch(10)
         
-        user = users.get_current_user()
+            user = users.get_current_user()
         
-        if user:
-            url = users.create_logout_url(self.request.uri)
-            url_linktext = 'Logout'
+            if user:
+                url = users.create_logout_url(self.request.uri)
+                url_linktext = 'Logout'
+            else:
+                url = users.create_login_url(self.request.uri)
+                url_linktext = 'Login'
+        
+            template_values = {
+                'user' : user,
+                'list' : list_items,
+                'list_unquoted' : list_name,
+                'list_name' : urllib.quote_plus(list_name),
+                'url' : url,
+                'url_linktext' : url_linktext,
+            }
+        
+            template = JINJA_ENVIRONMENT.get_template('list_page.html')
+            self.response.write(template.render(template_values))
+
         else:
-            url = users.create_login_url(self.request.uri)
-            url_linktext = 'Login'
-        
-        template_values = {
-            'user' : user,
-            'greetings' : list_items,
-            'guestbook_unquoted' : list_name,
-            'guestbook_name' : urllib.quote_plus(list_name),
-            'url' : url,
-            'url_linktext' : url_linktext,
-        }
-        
-        template = JINJA_ENVIRONMENT.get_template('list_page.html')
-        self.response.write(template.render(template_values))
+            self.response.write("List not found!")
+
 
 app = webapp2.WSGIApplication([
                                ('/', MainPage),
+                               ('/newlist', CreateList),
                                (r'/list/.+',ListPage),
                                (r'/user/.+',UserPage)
                                ], debug=True)
