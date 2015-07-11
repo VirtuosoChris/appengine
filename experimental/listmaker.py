@@ -53,8 +53,10 @@ class ListMakerContent(ndb.Model):
     date = ndb.DateTimeProperty(auto_now_add=True)
 
 class ListMakerList(ListMakerContent):
+    pass
 
 class ListMakerListItem(ListMakerContent):
+    pass
 
 class MainPage(webapp2.RequestHandler): #separate main page from list page and user page
     def get(self):
@@ -89,10 +91,13 @@ class CreateList(webapp2.RequestHandler):
             self.response.write("ERROR : LIST ALREADY EXISTS")
         else:
             list = ListMakerList()
+            list.key = listKey
             list.content = list_name
         
             if users.get_current_user():
                 list.author = users.get_current_user()
+            
+            list.put()
             
             self.redirect('/list/' + list_name)
 
