@@ -67,8 +67,8 @@ class ListPage(webapp2.RequestHandler): #separate main page from list page and u
             if users.get_current_user():
                 listItem.author = users.get_current_user()
         
-                listItem.content = content
-                listItem.put()
+            listItem.content = content
+            listItem.put()
         
         query_params = {'list_name': list_name}
         self.redirect('/list/'+list_name)
@@ -107,23 +107,8 @@ class ListPage(webapp2.RequestHandler): #separate main page from list page and u
         template = JINJA_ENVIRONMENT.get_template('list_page.html')
         self.response.write(template.render(template_values))
 
-class GuestBook(webapp2.RequestHandler):
-    def post(self):
-        list_name = self.request.get('list_name', DEFAULT_LIST_NAME)
-        listItem = ListMakerContent(parent=guestbook_key(list_name))
-        
-        if users.get_current_user():
-            listItem.author = users.get_current_user()
-
-        listItem.content = self.request.get('content')
-        listItem.put()
-        
-        query_params = {'list_name': list_name}
-        self.redirect('/?' + urllib.urlencode(query_params))
-
 app = webapp2.WSGIApplication([
                                ('/', MainPage),
-                               ('/sign', GuestBook),
                                (r'/list/.+',ListPage),
                                (r'/user/.+',UserPage)
                                ], debug=True)
