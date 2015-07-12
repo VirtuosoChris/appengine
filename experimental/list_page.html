@@ -5,19 +5,24 @@
         <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
     </head>
     <body>
-        <div>{{ list_unquoted }}</div>
+        <title>{{ list_unquoted }}</title>
+        <h1>{{ list_unquoted }}</h1>
         
         {% for listitem in list %}
+        <p>
+        {{ listitem.content }}
+        <br>
+        <byline>
+        <i>
         {% if listitem.author %}
-        <b>{{ listitem.author.email() }}
-            {% if user and user.user_id() == listitem.author.user_id() %}
-            (You)
-            {% endif %}
-        </b> wrote:
+        by: {{ listitem.author.nickname() }}
         {% else %}
-        An anonymous person wrote:
+        by: Anonymous
         {% endif %}
-        <blockquote>{{ listitem.content }}</blockquote>
+        </i>
+        </byline>
+        <br>
+        </p>
         {% endfor %}
         
         <form action="/list/{{list_name}}?write_list={{list_name}}" method="post">
