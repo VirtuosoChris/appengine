@@ -106,6 +106,7 @@ class CreateList(webapp2.RequestHandler):
 class ListPage(webapp2.RequestHandler):
     def post(self):
         list_name = self.request.get('write_list', DEFAULT_LIST_NAME_ESCAPED)
+        list_name = urllib.quote_plus(list_name)
 
         content = self.request.get('content')
 
@@ -121,7 +122,7 @@ class ListPage(webapp2.RequestHandler):
             listItem.content = content
             listItem.put()
         
-        query_params = {'list_name': list_name}
+        #self.response.write(urllib.quote_plus(list_name))
         self.redirect('/list/'+list_name)
 
 
@@ -139,7 +140,7 @@ class ListPage(webapp2.RequestHandler):
     
             list_query = ListMakerContent.query(ancestor=listKey).order(-ListMakerContent.date)
         
-            list_items = list_query.fetch(10)
+            list_items = list_query.fetch(limit=None)
         
             user = users.get_current_user()
         
@@ -153,8 +154,8 @@ class ListPage(webapp2.RequestHandler):
             template_values = {
                 'user' : user,
                 'list' : list_items,
-                'list_unquoted' : list_name,
-                'list_name' : urllib.quote_plus(list_name),
+                'list_unquoted' : urllib.unquote_plus(list_name),
+                'list_name' : list_name,
                 'url' : url,
                 'url_linktext' : url_linktext,
             }
