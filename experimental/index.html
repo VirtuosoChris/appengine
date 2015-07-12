@@ -1,38 +1,40 @@
 <!DOCTYPE html>
 {% autoescape true %}
 <html>
+    
+    <title>ListMaker.co : Create Lists And Share Them With Your Friends!</title>
+    
     <head>
         <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
     </head>
     
+    <h1>ListMaker : Create Lists And Share Them With Your Friends</h1>
+    <p2>
+    <a href = "/newlist">Create New List</a>
+    &emsp;
+    <a href="{{ url|safe }}">{{ url_linktext }}</a>
+    </p2>
+
+    <hr>
+    
     <body>
-        {% for greeting in greetings %}
-        {% if greeting.author %}
-        <b>{{ greeting.author.email }}
-            {% if user and user.user_id() == greeting.author.identity %}
-            (You)
-            {% endif %}
-        </b> wrote:
+        {% for recent_list in recent_lists %}
+
+        <p>
+        <a href = list/{{recent_list.content | urlencode}} >{{ recent_list.content }}</a>
+        <byline>
+        <br>
+        <i>
+        {% if recent_list.author %}
+        by: {{ recent_list.author.nickname() }}
         {% else %}
-        An anonymous person wrote:
+        by: Anonymous
         {% endif %}
-        <blockquote>{{ greeting.content }}</blockquote>
+        </i>
+        </byline>
+        </p>
+        
         {% endfor %}
-        
-        <form action="/sign?guestbook_name={{ guestbook_name }}" method="post">
-            <div><textarea name="content" rows="3" cols="60"></textarea></div>
-            <div><input type="submit" value="Sign Guestbook"></div>
-        </form>
-        
-        <hr>
-        
-        <form>Guestbook name:
-            <input value="{{ guestbook_name }}" name="guestbook_name">
-                <input type="submit" value="switch">
-                    </form>
-        
-        <a href="{{ url|safe }}">{{ url_linktext }}</a>
-        
     </body>
 </html>
 {% endautoescape %}

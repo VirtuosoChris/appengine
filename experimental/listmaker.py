@@ -5,6 +5,9 @@
 #karma buttons
 #complete homepage
 #complete user pages
+#user comments, suggestions on posts?
+#search
+#admin tools
 
 #parent list item to "lists"
 #parent content to particular list
@@ -18,6 +21,8 @@ from urlparse import urlparse
 
 from google.appengine.api import users
 from google.appengine.ext import ndb
+
+from markupsafe import Markup
 
 
 JINJA_ENVIRONMENT = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
@@ -54,6 +59,8 @@ class ListMakerContent(ndb.Model):
 
 class ListMakerList(ListMakerContent):
     pass
+    # tags
+    # permissions
 
 class ListMakerListItem(ListMakerContent):
     pass
@@ -61,9 +68,26 @@ class ListMakerListItem(ListMakerContent):
 class MainPage(webapp2.RequestHandler): #separate main page from list page and user page
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
-
-        self.response.write("Main Page")
-
+        
+        recent_lists = ListMakerList.query().order(-ListMakerList.date).fetch(limit=25)
+        
+        user = users.get_current_user()
+            
+        if user:
+            url = users.create_logout_url(self.request.uri)
+            url_linktext = 'Logout'
+        else:
+            url = users.create_login_url(self.request.uri)
+            url_linktext = 'Login'
+        
+        template_values = {
+            'recent_lists' : recent_lists,
+            'url' : url,
+            'url_linktext' : url_linktext,
+        }
+        
+        template = JINJA_ENVIRONMENT.get_template('index.html')
+        self.response.write(template.render(template_values))
 
 class UserPage(webapp2.RequestHandler):
     def get(self):
@@ -80,7 +104,8 @@ class CreateList(webapp2.RequestHandler):
     def post(self):
         self.response.headers['Content-Type'] = 'text/html'
 
-        list_name = urllib.quote_plus(self.request.get('list_name'))
+        list_name_unquoted = self.request.get('list_name')
+        list_name = urllib.quote_plus(list_name_unquoted)
         
         if len(list_name) > MAX_LIST_NAME_LENGTH:
             list_name = list_name[0:MAX_LIST_NAME_LENGTH]
@@ -93,14 +118,14 @@ class CreateList(webapp2.RequestHandler):
         else:
             list = ListMakerList()
             list.key = listKey
-            list.content = list_name
+            list.content = list_name_unquoted
         
             if users.get_current_user():
                 list.author = users.get_current_user()
             
             list.put()
             
-            self.redirect('/list/' + urllib.quote_plus(list_name))
+            self.redirect('/list/' + list_name)
 
 
 class ListPage(webapp2.RequestHandler):
@@ -173,4 +198,15 @@ app = webapp2.WSGIApplication([
                                (r'/list/.+',ListPage),
                                (r'/user/.+',UserPage)
                                ], debug=True)
+
+
+def urlencode_filter(s):
+    if type(s) == 'Markup':
+        s = s.unescape()
+    s = s.encode('utf8')
+    s = urllib.quote_plus(s)
+    return Markup(s)
+
+JINJA_ENVIRONMENT.filters['urlencode'] = urlencode_filter
+
 
