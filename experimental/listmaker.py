@@ -99,7 +99,24 @@ class CreateList(webapp2.RequestHandler):
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
         template = JINJA_ENVIRONMENT.get_template('create_list_page.html')
-        self.response.write(template.render())
+        
+        user = users.get_current_user()
+
+        user = users.get_current_user()
+    
+        if user:
+            url = users.create_logout_url(self.request.uri)
+            url_linktext = 'Logout'
+        else:
+            url = users.create_login_url(self.request.uri)
+            url_linktext = 'Login'
+
+        template_values = {
+            'url' : url,
+            'url_linktext' : url_linktext,
+        }
+
+        self.response.write(template.render(template_values))
     
     def post(self):
         self.response.headers['Content-Type'] = 'text/html'
@@ -201,8 +218,8 @@ app = webapp2.WSGIApplication([
 
 
 def urlencode_filter(s):
-    if type(s) == 'Markup':
-        s = s.unescape()
+    #    if type(s) == 'Markup':
+    #    s = s.unescape()
     s = s.encode('utf8')
     s = urllib.quote_plus(s)
     return Markup(s)
