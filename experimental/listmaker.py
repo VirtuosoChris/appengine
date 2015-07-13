@@ -3,7 +3,6 @@
 #prevent duplicate submissions
 #nonexistent lists, create list page
 #karma buttons
-#complete homepage
 #complete user pages
 #user comments, suggestions on posts?
 #search
@@ -30,17 +29,19 @@ JINJA_ENVIRONMENT = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.di
                                        autoescape=True)
 
 DEFAULT_LIST_NAME = 'Reasons Why You Should Use ListMaker'
-DEFAULT_LIST_NAME_ESCAPED = urllib.quote_plus(DEFAULT_LIST_NAME)
 MAX_CONTENT_TEXT_LENGTH = 500
 MAX_LIST_NAME_LENGTH = 140
 
-# We set a parent key on the 'Greetings' to ensure that they are all
-# in the same entity group. Queries across the single entity group
-# will be consistent.  However, the write rate should be limited to
-# ~1/second.
-
 def list_key(list_name=DEFAULT_LIST_NAME):
     return ndb.Key('ListMakerList', list_name)
+
+def encode_list_name(sv):
+    return urllib.quote(sv)
+
+def decode_list_name(sv):
+    return urllib.unquote(sv)
+
+DEFAULT_LIST_NAME_ESCAPED = encode_list_name(DEFAULT_LIST_NAME)
 
 #def karma_delta(karma_delta, ndb_key):
 #url_string = sandy_key.urlsafe()
@@ -65,7 +66,7 @@ class ListMakerList(ListMakerContent):
 class ListMakerListItem(ListMakerContent):
     pass
 
-class MainPage(webapp2.RequestHandler): #separate main page from list page and user page
+class MainPage(webapp2.RequestHandler):
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
         
@@ -122,7 +123,7 @@ class CreateList(webapp2.RequestHandler):
         self.response.headers['Content-Type'] = 'text/html'
 
         list_name_unquoted = self.request.get('list_name')
-        list_name = urllib.quote_plus(list_name_unquoted)
+        list_name = encode_list_name(list_name_unquoted)
         
         if len(list_name) > MAX_LIST_NAME_LENGTH:
             list_name = list_name[0:MAX_LIST_NAME_LENGTH]
@@ -148,7 +149,8 @@ class CreateList(webapp2.RequestHandler):
 class ListPage(webapp2.RequestHandler):
     def post(self):
         list_name = self.request.get('write_list', DEFAULT_LIST_NAME_ESCAPED)
-        list_name = urllib.quote_plus(list_name)
+        
+        list_name = encode_list_name(list_name)
 
         content = self.request.get('content')
 
@@ -163,15 +165,19 @@ class ListPage(webapp2.RequestHandler):
         
             listItem.content = content
             listItem.put()
-        
-        #self.response.write(urllib.quote_plus(list_name))
-        self.redirect('/list/'+list_name)
+
+        self.redirect('/list/'+ list_name)
 
 
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
         
-        list_name = urlparse(self.request.uri)[2]
+        #some escape characters get expanded in self.request.url
+        #Examples pluses are getting expanded to pluses instead of staying as %2B
+        #Others don't, like spaces.
+        #this is an ugly hack but i don't know why this isn't working
+        list_name = decode_list_name(urlparse(self.request.uri)[2])
+        list_name = encode_list_name(list_name)
 
         if list_name.startswith("/list/"):
             list_name = list_name[6:]
@@ -192,11 +198,11 @@ class ListPage(webapp2.RequestHandler):
             else:
                 url = users.create_login_url(self.request.uri)
                 url_linktext = 'Login'
-        
+
             template_values = {
                 'user' : user,
                 'list' : list_items,
-                'list_unquoted' : urllib.unquote_plus(list_name),
+                'list_unquoted' : decode_list_name(list_name),
                 'list_name' : list_name,
                 'url' : url,
                 'url_linktext' : url_linktext,
@@ -218,10 +224,8 @@ app = webapp2.WSGIApplication([
 
 
 def urlencode_filter(s):
-    #    if type(s) == 'Markup':
-    #    s = s.unescape()
     s = s.encode('utf8')
-    s = urllib.quote_plus(s)
+    s = encode_list_name(s)
     return Markup(s)
 
 JINJA_ENVIRONMENT.filters['urlencode'] = urlencode_filter
