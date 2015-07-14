@@ -11,6 +11,8 @@
 #parent list item to "lists"
 #parent content to particular list
 
+#newlines in content
+
 import webapp2
 import cgi
 import urllib
@@ -35,7 +37,6 @@ JINJA_ENVIRONMENT = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.di
 DEFAULT_LIST_NAME = 'Reasons Why You Should Use ListMaker'
 MAX_CONTENT_TEXT_LENGTH = 500
 MAX_LIST_NAME_LENGTH = 140
-NUM_KARMA_SHARDS = 20
 
 def list_key(list_name=DEFAULT_LIST_NAME):
     return ndb.Key('ListMakerList', list_name)
@@ -59,12 +60,23 @@ class ListMakerUser(ndb.Model): #todo aliases, different login mechanisms
 class ListMakerContent(ndb.Model):
     content = ndb.StringProperty(indexed=False);
     author  = ndb.UserProperty(indexed=True);
-    upvotes = ndb.IntegerProperty(indexed=False, default=1);
-    downvotes = ndb.IntegerProperty(indexed=False, default=0);
     date = ndb.DateTimeProperty(auto_now_add=True)
 
-    def counter_key(index):
-        return counter_key_prefix+counter+"::"+encode_list_name(content)
+    def increment_upvote_counter():
+        counter_name = counter_key_prefix + "upvotes::" + encode_list_name(content)
+        shardcounter.increment_counter(counter_name)
+
+    def increment_downvote_counter():
+        counter_name = counter_key_prefix + "downvotes::" + encode_list_name(content)
+        shardcounter.increment_counter(counter_name)
+
+    def get_upvotes():
+        counter_name = counter_key_prefix + "upvotes::" + encode_list_name(content)
+        shardcounter.get_count(counter_name)
+
+    def get_downvotes():
+        counter_name = counter_key_prefix + "downvotes::" + encode_list_name(content)
+        shardcounter.get_count(counter_name)
 
 #todo tags, permissions
 class ListMakerList(ListMakerContent):
@@ -156,7 +168,7 @@ class CreateList(webapp2.RequestHandler):
 class CounterTest(webapp2.RequestHandler):
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
-        shardcounter._increment("testcounter",30)
+        shardcounter.increment("testcounter")
         self.response.write(""+str(shardcounter.get_count("testcounter")))
 
 
@@ -229,12 +241,31 @@ class ListPage(webapp2.RequestHandler):
             self.response.write("List not found!")
 
 
+class Karma(webapp2.RequestHandler):
+
+    def post(self):
+        self.response.headers['Content-Type'] = 'text/html'
+        arg = self.request.get('arg', 'ERR')
+        if(arg == 'ERR'):
+            self.response.write('ERR')
+        count = shardcounter.increment(arg)
+        self.response.write(count)
+
+    def get(self):
+        self.response.headers['Content-Type'] = 'text/html'
+        arg = self.request.get('arg', 'ERR')
+        if(arg == 'ERR'):
+            return 'ERR'
+        count = shardcounter.get_count(arg)
+        self.response.write(count)
+
 app = webapp2.WSGIApplication([
                                ('/', MainPage),
                                ('/newlist', CreateList),
                                (r'/list/.+',ListPage),
                                (r'/user/.+',UserPage),
-                               ('/countertest', CounterTest)
+                               ('/countertest', CounterTest),
+                               ('/karma', Karma)
                                ], debug=True)
 
 
@@ -243,6 +274,14 @@ def urlencode_filter(s):
     s = encode_list_name(s)
     return Markup(s)
 
+def list_upvote_counter_key(s):
+    s = s.encode('utf8')
+    s = ListMakerList.counter_key_prefix + "upvotes::" + encode_list_name(s)
+    return Markup(s)
+
 JINJA_ENVIRONMENT.filters['urlencode'] = urlencode_filter
+JINJA_ENVIRONMENT.filters['upvote_key'] = list_upvote_counter_key
+
+
 
 

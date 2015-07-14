@@ -6,6 +6,29 @@
     
     <head>
         <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
+        
+        <script>
+            function call_script(arg_in){
+            
+                var xmlhttp;
+                if (window.XMLHttpRequest)
+                {// code for IE7+, Firefox, Chrome, Opera, Safari
+                    xmlhttp=new XMLHttpRequest();
+                    
+                    xmlhttp.onreadystatechange=function()
+                    {
+                        if (xmlhttp.readyState==4 && xmlhttp.status==200)
+                        {
+                            document.getElementById("div_" + arg_in).innerHTML=xmlhttp.responseText;
+                        }
+                    }
+                    
+                    xmlhttp.open("POST","/karma?arg=" + arg_in, true); //3rd arg is async, 2nd arg is url of file
+                    xmlhttp.send(); //string argument used or post requests
+                }
+            }
+        </script>
+        
     </head>
     
     <h1>ListMaker : Create Lists And Share Them With Your Friends</h1>
@@ -18,12 +41,19 @@
     <hr>
     
     <body>
+        
+        
         {% for recent_list in recent_lists %}
 
         <p>
-        <a href = list/{{recent_list.content | urlencode}} >{{ recent_list.content }}</a>
+        <div id="div_{{recent_list.content | upvote_key}}"></div> <a href = list/{{recent_list.content | urlencode}} >{{ recent_list.content }}</a>
         <byline>
         <br>
+        
+        <!-- Is this ok? -->
+        <button type="button" onclick="call_script('{{recent_list.content | upvote_key}}')">Upvote</button>
+        
+        
         <i>
         {% if recent_list.author %}
         by: {{ recent_list.author.nickname() }}
@@ -33,7 +63,7 @@
         </i>
         </byline>
         </p>
-        
+        <br>
         {% endfor %}
     </body>
 </html>
