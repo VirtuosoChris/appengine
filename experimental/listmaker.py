@@ -16,12 +16,16 @@ import cgi
 import urllib
 import os
 import jinja2
+import random
+import shardcounter
+
 from urlparse import urlparse
+from markupsafe import Markup
 
 from google.appengine.api import users
 from google.appengine.ext import ndb
 
-from markupsafe import Markup
+
 
 
 JINJA_ENVIRONMENT = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
@@ -31,6 +35,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.di
 DEFAULT_LIST_NAME = 'Reasons Why You Should Use ListMaker'
 MAX_CONTENT_TEXT_LENGTH = 500
 MAX_LIST_NAME_LENGTH = 140
+NUM_KARMA_SHARDS = 20
 
 def list_key(list_name=DEFAULT_LIST_NAME):
     return ndb.Key('ListMakerList', list_name)
@@ -58,13 +63,15 @@ class ListMakerContent(ndb.Model):
     downvotes = ndb.IntegerProperty(indexed=False, default=0);
     date = ndb.DateTimeProperty(auto_now_add=True)
 
+    def counter_key(index):
+        return counter_key_prefix+counter+"::"+encode_list_name(content)
+
+#todo tags, permissions
 class ListMakerList(ListMakerContent):
-    pass
-    # tags
-    # permissions
+    counter_key_prefix = "listcounter::"
 
 class ListMakerListItem(ListMakerContent):
-    pass
+    counter_key_prefix = "listitemcounter::"
 
 class MainPage(webapp2.RequestHandler):
     def get(self):
@@ -146,6 +153,13 @@ class CreateList(webapp2.RequestHandler):
             self.redirect('/list/' + list_name)
 
 
+class CounterTest(webapp2.RequestHandler):
+    def get(self):
+        self.response.headers['Content-Type'] = 'text/html'
+        shardcounter._increment("testcounter",30)
+        self.response.write(""+str(shardcounter.get_count("testcounter")))
+
+
 class ListPage(webapp2.RequestHandler):
     def post(self):
         list_name = self.request.get('write_list', DEFAULT_LIST_NAME_ESCAPED)
@@ -219,7 +233,8 @@ app = webapp2.WSGIApplication([
                                ('/', MainPage),
                                ('/newlist', CreateList),
                                (r'/list/.+',ListPage),
-                               (r'/user/.+',UserPage)
+                               (r'/user/.+',UserPage),
+                               ('/countertest', CounterTest)
                                ], debug=True)
 
 
