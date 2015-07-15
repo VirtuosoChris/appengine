@@ -255,7 +255,7 @@ class Karma(webapp2.RequestHandler):
         self.response.headers['Content-Type'] = 'text/html'
         arg = self.request.get('arg', 'ERR')
         if(arg == 'ERR'):
-            return 'ERR'
+            self.response.write('ERR')
         count = shardcounter.get_count(arg)
         self.response.write(count)
 

@@ -55,7 +55,6 @@ def _increment(name, num_shards):
         return get_count(name)
     return rval
 
-
 @ndb.transactional
 def increase_shards(name, num_shards):
     config = GeneralCounterShardConfig.get_or_insert(name)
