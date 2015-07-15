@@ -3,13 +3,11 @@ import random
 from google.appengine.api import memcache
 from google.appengine.ext import ndb
 
-
 SHARD_KEY_TEMPLATE = 'shard-{}-{:d}'
-
 
 class GeneralCounterShardConfig(ndb.Model):
     num_shards = ndb.IntegerProperty(default=20)
-    
+
     @classmethod
     def all_keys(cls, name):
         config = cls.get_or_insert(name)
@@ -48,7 +46,7 @@ def _increment(name, num_shards):
 
     counter.count += 1
     counter.put()
-    
+
     rval = memcache.incr(name) # Memcache increment does nothing if the name is not a key in memcache
 
     if rval is None:

@@ -88,24 +88,24 @@ class ListMakerListItem(ListMakerContent):
 class MainPage(webapp2.RequestHandler):
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
-        
+
         recent_lists = ListMakerList.query().order(-ListMakerList.date).fetch(limit=25)
-        
+
         user = users.get_current_user()
-            
+
         if user:
             url = users.create_logout_url(self.request.uri)
             url_linktext = 'Logout'
         else:
             url = users.create_login_url(self.request.uri)
             url_linktext = 'Login'
-        
+
         template_values = {
             'recent_lists' : recent_lists,
             'url' : url,
             'url_linktext' : url_linktext,
         }
-        
+
         template = JINJA_ENVIRONMENT.get_template('index.html')
         self.response.write(template.render(template_values))
 
@@ -119,11 +119,11 @@ class CreateList(webapp2.RequestHandler):
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
         template = JINJA_ENVIRONMENT.get_template('create_list_page.html')
-        
+
         user = users.get_current_user()
 
         user = users.get_current_user()
-    
+
         if user:
             url = users.create_logout_url(self.request.uri)
             url_linktext = 'Logout'
@@ -137,18 +137,18 @@ class CreateList(webapp2.RequestHandler):
         }
 
         self.response.write(template.render(template_values))
-    
+
     def post(self):
         self.response.headers['Content-Type'] = 'text/html'
 
         list_name_unquoted = self.request.get('list_name')
         list_name = encode_list_name(list_name_unquoted)
-        
+
         if len(list_name) > MAX_LIST_NAME_LENGTH:
             list_name = list_name[0:MAX_LIST_NAME_LENGTH]
-        
+
         listKey = list_key(list_name)
-    
+
         if listKey.get():
             self.response.write("ERROR : LIST ALREADY EXISTS")
             #self.redirect('/list/' + list_name) ###
@@ -156,12 +156,12 @@ class CreateList(webapp2.RequestHandler):
             list = ListMakerList()
             list.key = listKey
             list.content = list_name_unquoted
-        
+
             if users.get_current_user():
                 list.author = users.get_current_user()
-            
+
             list.put()
-            
+
             self.redirect('/list/' + list_name)
 
 
@@ -175,7 +175,7 @@ class CounterTest(webapp2.RequestHandler):
 class ListPage(webapp2.RequestHandler):
     def post(self):
         list_name = self.request.get('write_list', DEFAULT_LIST_NAME_ESCAPED)
-        
+
         list_name = encode_list_name(list_name)
 
         content = self.request.get('content')
@@ -185,10 +185,10 @@ class ListPage(webapp2.RequestHandler):
 
         if len(content):
             listItem = ListMakerContent(parent=list_key(list_name))
-        
+
             if users.get_current_user():
                 listItem.author = users.get_current_user()
-        
+
             listItem.content = content
             listItem.put()
 
@@ -197,7 +197,7 @@ class ListPage(webapp2.RequestHandler):
 
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
-        
+
         #some escape characters get expanded in self.request.url
         #Examples pluses are getting expanded to pluses instead of staying as %2B
         #Others don't, like spaces.
@@ -207,17 +207,17 @@ class ListPage(webapp2.RequestHandler):
 
         if list_name.startswith("/list/"):
             list_name = list_name[6:]
-                
+
         listKey = list_key(list_name)
-    
+
         if listKey.get():
-    
+
             list_query = ListMakerContent.query(ancestor=listKey).order(-ListMakerContent.date)
-        
+
             list_items = list_query.fetch(limit=None)
-        
+
             user = users.get_current_user()
-        
+
             if user:
                 url = users.create_logout_url(self.request.uri)
                 url_linktext = 'Logout'
@@ -233,7 +233,7 @@ class ListPage(webapp2.RequestHandler):
                 'url' : url,
                 'url_linktext' : url_linktext,
             }
-        
+
             template = JINJA_ENVIRONMENT.get_template('list_page.html')
             self.response.write(template.render(template_values))
 
@@ -281,7 +281,3 @@ def list_upvote_counter_key(s):
 
 JINJA_ENVIRONMENT.filters['urlencode'] = urlencode_filter
 JINJA_ENVIRONMENT.filters['upvote_key'] = list_upvote_counter_key
-
-
-
-
