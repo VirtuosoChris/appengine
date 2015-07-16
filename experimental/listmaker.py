@@ -49,6 +49,19 @@ def decode_list_name(sv):
 
 DEFAULT_LIST_NAME_ESCAPED = encode_list_name(DEFAULT_LIST_NAME)
 
+def urlencode_filter(s):
+    s = s.encode('utf8')
+    s = encode_list_name(s)
+    return Markup(s)
+
+def list_upvote_counter_key(s):
+    s = s.encode('utf8')
+    s = ListMakerList.counter_key_prefix + "upvotes::" + encode_list_name(s)
+    return Markup(s)
+
+JINJA_ENVIRONMENT.filters['urlencode'] = urlencode_filter
+JINJA_ENVIRONMENT.filters['upvote_key'] = list_upvote_counter_key
+
 #def karma_delta(karma_delta, ndb_key):
 #url_string = sandy_key.urlsafe()
 #sandy_key.kind() == 'Account'
@@ -258,17 +271,3 @@ app = webapp2.WSGIApplication([
                                (r'/user/.+',UserPage),
                                ('/karma', Karma)
                                ], debug=True)
-
-
-def urlencode_filter(s):
-    s = s.encode('utf8')
-    s = encode_list_name(s)
-    return Markup(s)
-
-def list_upvote_counter_key(s):
-    s = s.encode('utf8')
-    s = ListMakerList.counter_key_prefix + "upvotes::" + encode_list_name(s)
-    return Markup(s)
-
-JINJA_ENVIRONMENT.filters['urlencode'] = urlencode_filter
-JINJA_ENVIRONMENT.filters['upvote_key'] = list_upvote_counter_key
