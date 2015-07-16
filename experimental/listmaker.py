@@ -71,7 +71,7 @@ class ListMakerUser(ndb.Model): #todo aliases, different login mechanisms
 
 # shared data layout for a list, and list items
 class ListMakerContent(ndb.Model):
-    content = ndb.StringProperty(indexed=False);
+    content = ndb.StringProperty(indexed=True);
     author  = ndb.UserProperty(indexed=True);
     date = ndb.DateTimeProperty(auto_now_add=True)
 
@@ -151,17 +151,8 @@ class CreateList(webapp2.RequestHandler):
 
         self.response.write(template.render(template_values))
 
-    def post(self):
-        self.response.headers['Content-Type'] = 'text/html'
-
-        list_name_unquoted = self.request.get('list_name')
-        list_name = encode_list_name(list_name_unquoted)
-
-        if len(list_name) > MAX_LIST_NAME_LENGTH:
-            list_name = list_name[0:MAX_LIST_NAME_LENGTH]
-
-        listKey = list_key(list_name)
-
+    @ndb.transactional
+    def put_list(self, listKey, list_name_unquoted):
         if listKey.get():
             self.response.write("ERROR : LIST ALREADY EXISTS")
             #self.redirect('/list/' + list_name) ###
@@ -175,9 +166,43 @@ class CreateList(webapp2.RequestHandler):
 
             list.put()
 
-            self.redirect('/list/' + list_name)
+    def post(self):
+        self.response.headers['Content-Type'] = 'text/html'
+
+        list_name_unquoted = self.request.get('list_name')
+        list_name = encode_list_name(list_name_unquoted)
+
+        if len(list_name) > MAX_LIST_NAME_LENGTH:
+            list_name = list_name[0:MAX_LIST_NAME_LENGTH]
+
+        listKey = list_key(list_name)
+
+        self.put_list(listKey, list_name_unquoted)
+
+        self.redirect('/list/' + list_name)
 
 class ListPage(webapp2.RequestHandler):
+
+    @ndb.transactional
+    def put_list_item(self, content, list_name):
+
+        parent_key = list_key(list_name)
+
+        query = ListMakerContent.query(ListMakerContent.content == content, ancestor = parent_key)
+
+        if query.fetch(1) :
+            return False
+
+        listItem = ListMakerContent(parent=parent_key)
+
+        if users.get_current_user():
+            listItem.author = users.get_current_user()
+
+        listItem.content = content
+        listItem.put()
+
+        return True
+
     def post(self):
         list_name = self.request.get('write_list', DEFAULT_LIST_NAME_ESCAPED)
 
@@ -189,13 +214,8 @@ class ListPage(webapp2.RequestHandler):
             content = content[0:MAX_CONTENT_TEXT_LENGTH];
 
         if len(content):
-            listItem = ListMakerContent(parent=list_key(list_name))
-
-            if users.get_current_user():
-                listItem.author = users.get_current_user()
-
-            listItem.content = content
-            listItem.put()
+            self.put_list_item(content, list_name)
+            #if already added, add a vote, show a message
 
         self.redirect('/list/'+ list_name)
 
