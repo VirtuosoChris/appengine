@@ -164,14 +164,6 @@ class CreateList(webapp2.RequestHandler):
 
             self.redirect('/list/' + list_name)
 
-
-class CounterTest(webapp2.RequestHandler):
-    def get(self):
-        self.response.headers['Content-Type'] = 'text/html'
-        shardcounter.increment("testcounter")
-        self.response.write(""+str(shardcounter.get_count("testcounter")))
-
-
 class ListPage(webapp2.RequestHandler):
     def post(self):
         list_name = self.request.get('write_list', DEFAULT_LIST_NAME_ESCAPED)
@@ -264,7 +256,6 @@ app = webapp2.WSGIApplication([
                                ('/newlist', CreateList),
                                (r'/list/.+',ListPage),
                                (r'/user/.+',UserPage),
-                               ('/countertest', CounterTest),
                                ('/karma', Karma)
                                ], debug=True)
 
