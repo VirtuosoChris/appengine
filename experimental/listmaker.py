@@ -269,12 +269,18 @@ class ListPage(webapp2.RequestHandler):
 class Karma(webapp2.RequestHandler):
 
     def post(self):
-        self.response.headers['Content-Type'] = 'text/html'
-        arg = self.request.get('arg', 'ERR')
-        if(arg == 'ERR'):
-            self.response.write('ERR')
-        count = shardcounter.increment(arg)
-        self.response.write(count)
+        user = users.get_current_user()
+
+        if user:
+            self.response.headers['Content-Type'] = 'text/html'
+            arg = self.request.get('arg', 'ERR')
+            if(arg == 'ERR'):
+                self.response.write('ERR')
+            else:
+                count = shardcounter.increment(arg)
+                self.response.write(count)
+        else:
+            self.response.write("You must be logged in to vote<br><br><button type=\"button\" onclick=\"overlay()\">Close</button> ")
 
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'

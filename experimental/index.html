@@ -4,8 +4,21 @@
     <title>ListMaker.co : Create Lists And Share Them With Your Friends!</title>
     <head>
         <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
-        <script>
-            function call_script(arg_in)
+
+        <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+
+        <!-- Latest compiled and minified JavaScript -->
+        <!--<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script> -->
+
+        <script type="text/javascript">
+
+          function overlay()
+          {
+            el = document.getElementById("overlay");
+            el.style.visibility = (el.style.visibility == "visible") ? "hidden" : "visible";
+          }
+
+          function call_script(arg_in)
             {
                 var xmlhttp;
                 if (window.XMLHttpRequest) ///\todo exception
@@ -16,7 +29,15 @@
                     {
                         if (xmlhttp.readyState==4 && xmlhttp.status==200)
                         {
-                            document.getElementById("div_" + arg_in).innerHTML=xmlhttp.responseText;
+                            if(isNaN(xmlhttp.responseText))
+                            {
+                                document.getElementById("POPUP_DIV").innerHTML=xmlhttp.responseText;
+                                overlay();
+                            }
+                            else
+                            {
+                                document.getElementById("div_" + arg_in).innerHTML=xmlhttp.responseText;
+                            }
                         }
                     }
 
@@ -26,6 +47,8 @@
             }
         </script>
     </head>
+
+
 
     <h1>ListMaker : Create Lists And Share Them With Your Friends</h1>
     <p2>
@@ -56,6 +79,11 @@
         </p>
         <br>
     {% endfor %}
+
+    <div id="overlay">
+     <div id = "POPUP_DIV">CONTENT</div>
+   </div>
+
     </body>
 </html>
 {% endautoescape %}
