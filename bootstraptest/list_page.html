@@ -2,10 +2,22 @@
 {% autoescape true %}
 <html>
     <head>
-        <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
+      <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
+
+      <!-- Latest compiled and minified CSS -->
+      <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+
+      <!-- jQuery library -->
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+      <!-- Latest compiled JavaScript -->
+      <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
     </head>
     <body>
         <title>{{ list_unquoted }}</title>
+
+        <div class="page-header">
         <h1>{{ list_unquoted }}</h1>
         <p2>
             <a href = "/newlist">Create New List</a>
@@ -14,26 +26,28 @@
             &emsp;
             <a href="/">Home</a>
         </p2>
-        
-        <hr>
-        
+
+      </div>
+
         {% for listitem in list %}
-        <p>
+        <div class="panel panel-default">
+
+        <div class="panel-body">
         {{ listitem.content }}
-        <br>
-        <byline>
-        <i>
-        {% if listitem.author %}
-        by: {{ listitem.author.nickname() }}
-        {% else %}
-        by: Anonymous
-        {% endif %}
-        </i>
-        </byline>
-        <br>
-        </p>
+</div>
+
+      <div class="panel-footer">
+          {% if listitem.author %}
+          by: {{ listitem.author.nickname() }}
+          {% else %}
+          by: Anonymous
+          {% endif %}
+        </div>
+
+        </div>
+
         {% endfor %}
-        
+
         <form action="/list/{{list_name}}?write_list={{list_name}}" method="post">
             <div><textarea name="content" rows="3" cols="60" maxlength="500"></textarea></div>
             <div><input type="submit" value="Add item to list"></div>
