@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+    <head>
+        <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
+    </head>
+    <body>
+        <title>{{ list_unquoted }}</title>
+        <h1>{{ list_unquoted }}</h1>
+        <p2>
+            <a href = "/newlist">Create New List</a>
+            &emsp;
+            <a href="{{ url|safe }}">{{ url_linktext }}</a>
+            &emsp;
+            <a href="/">Home</a>
+        </p2>
+        
+        <hr>
+        
+        {% for listitem in list %}
+        <p>
+        {{ listitem.content }}
+        <br>
+        <byline>
+        <i>
+        {% if listitem.author %}
+        by: {{ listitem.author.nickname() }}
+        {% else %}
+        by: Anonymous
+        {% endif %}
+        </i>
+        </byline>
+        <br>
+        </p>
+        {% endfor %}
+        
+        <form action="/list/{{list_name}}?write_list={{list_name}}" method="post">
+            <div><textarea name="content" rows="3" cols="60" maxlength="500"></textarea></div>
+            <div><input type="submit" value="Add item to list"></div>
+        </form>
+    </body>
+</html>
+{% endautoescape %}

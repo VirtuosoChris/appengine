@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+    <head>
+        <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
+    </head>
+    <body>
+        
+        <h1>Create A New List</h1>
+        <p2>
+            <a href="{{ url|safe }}">{{ url_linktext }}</a>
+            &emsp;
+            <a href="/">Home</a>
+        </p2>
+        
+        <hr>
+        Create A New List Called:
+        <form action="/newlist" method="post">
+            <div><textarea name="list_name" rows="1" cols="60" maxlength="140"></textarea></div>
+            <div><input type="submit" value="Create List"></div>
+        </form>
+        </body>
+</html>
+{% endautoescape %}
